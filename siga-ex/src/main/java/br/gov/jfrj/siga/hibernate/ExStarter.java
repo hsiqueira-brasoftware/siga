@@ -19,6 +19,7 @@ import br.gov.jfrj.siga.cp.util.SigaFlyway;
 public class ExStarter {
 
 	public static EntityManagerFactory emf;
+	public static EntityManagerFactory emfSerial;
 
 	@PostConstruct
 	public void init() {
@@ -28,6 +29,11 @@ public class ExStarter {
 			throw new RuntimeException(e);
 		}
 		emf = Persistence.createEntityManagerFactory("default");
+		
+		String dataSourceSerial = System.getProperty("sigaex.datasource.ativa.serial");
+		if ("true".equals(dataSourceSerial))
+			emfSerial = Persistence.createEntityManagerFactory("sigaex_serial");
+		
 		Service.setUsuarioDeSistema(UsuarioDeSistemaEnum.SIGA_EX);
 	}
 }

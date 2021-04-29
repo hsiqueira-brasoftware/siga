@@ -239,6 +239,14 @@ public class ExApiV1Servlet extends SwaggerServlet implements IPropertyProvider 
 		//Siga-Le
 		addPublicProperty("smtp.sugestao.destinatario", getProp("/siga.smtp.usuario.remetente"));
 		addPublicProperty("smtp.sugestao.assunto", "Siga-Le: Sugestão");
+		
+		/* Em ambientes Clusterizados (Oracle RAC) algumas rotinas que ocorrem de forma serializada performam 
+		 * melhor se a execução ocorrer em apenas um nó devido a controle de locks.
+		 * Se, false: EntityManagerFactory usará a Persistence Unit default nos pontos implementados
+		 * Se, true: EntityManagerFactory usará o Persistence Unit sigaex_serial nos pontos implementados
+		 * Para utilização da PU sigaex_serial é necessário ter o DS SigaExSerialDS
+		 */
+		addPublicProperty("datasource.ativa.serial", "false");
 	}
 
 	@Override

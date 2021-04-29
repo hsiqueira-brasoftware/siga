@@ -30,6 +30,7 @@ import java.util.TreeSet;
 import javax.annotation.Resource;
 import javax.jws.WebService;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.servlet.ServletContext;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
@@ -80,19 +81,21 @@ public class ExServiceImpl implements ExService {
 	private final static Logger log = Logger.getLogger(ExService.class);
 
 	private class ExSoapContext extends SoapContext {
-		EntityManager em;
-		boolean transacional;
-		long inicio = System.currentTimeMillis();
 
 		public ExSoapContext(boolean transacional) {
 			super(context, ExStarter.emf, transacional);
+		}
+		
+		public ExSoapContext(boolean transacional, EntityManagerFactory emf, boolean cacheControl) {
+			super(context, emf, transacional, cacheControl);
 		}
 		
 		@Override
 		public void initDao() {
 			ExDao.getInstance();
 			try {
-				Ex.getInstance().getConf().limparCacheSeNecessario();
+				if (cacheControl)
+					Ex.getInstance().getConf().limparCacheSeNecessario();
 			} catch (Exception e1) {
 				throw new RuntimeException("Não foi possível atualizar o cache de configurações", e1);
 			}
@@ -755,7 +758,21 @@ public class ExServiceImpl implements ExService {
 	}
 
 	public String obterNumeracaoExpediente(Long idOrgaoUsu, Long idFormaDoc, Long anoEmissao) throws Exception {
-		try (ExSoapContext ctx = new ExSoapContext(true)) {
+		
+		Boolean dataSourceSerial = Prop.getBool("datasource.ativa.serial");
+		Boolean cacheControl;
+		EntityManagerFactory emfNumeracao;
+		
+		if (dataSourceSerial) {
+			emfNumeracao = ExStarter.emfSerial;
+			cacheControl = false;
+		} else {
+			emfNumeracao = ExStarter.emf;
+			cacheControl = true;
+		}
+			
+		
+		try (ExSoapContext ctx = new ExSoapContext(true,emfNumeracao,cacheControl)) {
 			try {
 				Long idDocNumeracao = null;
 				Long nrDocumento = 0L;

@@ -24,11 +24,17 @@ public abstract class SoapContext implements Closeable {
 	private WebServiceContext context;
 	EntityManager em;
 	boolean transacional;
+	protected boolean cacheControl;
 	long inicio = System.currentTimeMillis();
-
+	
 	public SoapContext(WebServiceContext context, EntityManagerFactory emf, boolean transacional) {
+		this(context,emf,transacional,true);
+	}
+
+	public SoapContext(WebServiceContext context, EntityManagerFactory emf, boolean transacional, boolean cacheControl) {
 		this.context = context;
 		this.transacional = transacional;
+		this.cacheControl = cacheControl;
 		em = emf.createEntityManager();
 		ContextoPersistencia.setEntityManager(em);
 
