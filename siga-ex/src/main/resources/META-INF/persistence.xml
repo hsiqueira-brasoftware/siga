@@ -242,6 +242,7 @@
 		<non-jta-data-source>java:/jboss/datasources/SigaExSerialDS</non-jta-data-source>
 		
 		<class>br.gov.jfrj.siga.ex.ExDocumentoNumeracao</class>
+		<class>br.gov.jfrj.siga.ex.ExSequencia</class>
 		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 		
 		<properties>

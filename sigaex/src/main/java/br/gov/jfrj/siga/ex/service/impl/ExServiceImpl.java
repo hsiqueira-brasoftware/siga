@@ -838,7 +838,20 @@ public class ExServiceImpl implements ExService {
 	}
 	
 	public String obterSequencia(Integer tipoSequencia, Long anoEmissao, String zerarInicioAno) throws Exception {
-		try (ExSoapContext ctx = new ExSoapContext(true)) {
+		Boolean dataSourceSerial = Prop.getBool("datasource.ativa.serial");
+		Boolean cacheControl;
+		EntityManagerFactory emfNumeracao;
+		
+		if (dataSourceSerial) {
+			emfNumeracao = ExStarter.emfSerial;
+			cacheControl = false;
+		} else {
+			emfNumeracao = ExStarter.emf;
+			cacheControl = true;
+		}
+			
+		
+		try (ExSoapContext ctx = new ExSoapContext(true,emfNumeracao,cacheControl)) {
 			try {
 				Long idSeq = null;
 				Long numero = 0L;
