@@ -40,6 +40,7 @@ import org.jboss.logging.Logger;
 import br.gov.jfrj.siga.base.AplicacaoException;
 import br.gov.jfrj.siga.base.Prop;
 import br.gov.jfrj.siga.base.SigaMessages;
+import br.gov.jfrj.siga.base.UsuarioDeSistemaEnum;
 import br.gov.jfrj.siga.cp.CpSituacaoConfiguracao;
 import br.gov.jfrj.siga.cp.CpTipoConfiguracao;
 import br.gov.jfrj.siga.cp.CpToken;
@@ -785,14 +786,43 @@ public class ExServiceImpl implements ExService {
 					CpOrgaoUsuario orgaoUsuario = new CpOrgaoUsuario();
 					ExFormaDocumento formaDocumento = new ExFormaDocumento();
 					orgaoUsuario.setIdOrgaoUsu(idOrgaoUsu);
-					formaDocumento.setIdFormaDoc(idFormaDoc);
+					formaDocumento.setIdFormaDoc(idFormaDoc);	
+					boolean podeReiniciarNumeracao;
 					
-					orgaoUsuario = dao().consultarPorId(orgaoUsuario);
-					formaDocumento = dao().consultarExFormaPorId(idFormaDoc);
-					
+					/*** Verifica se precisa reiniciar numeracao ****/
+					if (dataSourceSerial) {
+						
+						/* Se execução serial, necessário usar a PU default para acesso as demais entidades 
+						 * Retém objetos antes de removeAll do try-with-resource abaixo e reaplica após closeable
+						 */
+						String userPrincipal = ContextoPersistencia.getUserPrincipal();
+						UsuarioDeSistemaEnum usuarioDeSistema = ContextoPersistencia.getUsuarioDeSistema();
+						EntityManager em = ContextoPersistencia.getEntityManager();
+						
+						try (ExSoapContext ctxAux = new ExSoapContext(false)) {
+							try {
+								orgaoUsuario = dao().consultarPorId(orgaoUsuario);
+								formaDocumento = dao().consultarExFormaPorId(idFormaDoc);
+								podeReiniciarNumeracao = Ex.getInstance().getComp().podeReiniciarNumeracao(orgaoUsuario, formaDocumento);
+							} catch (Exception ex) {
+								ctxAux.rollback(ex);
+								throw ex;
+							}
+						}	
+						
+						ContextoPersistencia.setUserPrincipal(userPrincipal);
+						ContextoPersistencia.setUsuarioDeSistema(usuarioDeSistema);
+						ContextoPersistencia.setEntityManager(em);
+						
+					} else {
+						orgaoUsuario = dao().consultarPorId(orgaoUsuario);
+						formaDocumento = dao().consultarExFormaPorId(idFormaDoc);
+						podeReiniciarNumeracao = Ex.getInstance().getComp().podeReiniciarNumeracao(orgaoUsuario, formaDocumento);
+					}
+
 					idDocNumeracao = dao().existeRangeNumeroDocumento(idOrgaoUsu, idFormaDoc);
-					
-					if ( (idDocNumeracao != null) && !Ex.getInstance().getComp().podeReiniciarNumeracao(orgaoUsuario, formaDocumento)) { //Existe Range Anterior e Não pode Resetar numeracao
+
+					if ( (idDocNumeracao != null) && !podeReiniciarNumeracao) { //Existe Range Anterior e Não pode Resetar numeracao
 						dao().updateMantemRangeNumeroDocumento(idDocNumeracao);
 			
 					} else { //Não existe ou deve resetar numeração
@@ -850,7 +880,6 @@ public class ExServiceImpl implements ExService {
 			cacheControl = true;
 		}
 			
-		
 		try (ExSoapContext ctx = new ExSoapContext(true,emfNumeracao,cacheControl)) {
 			try {
 				Long idSeq = null;
