@@ -708,11 +708,21 @@ public class AppController extends GcController {
 		DpLotacao lotaTitular = getLotaTitular();
 
 		// Edson: esta estranho referenciar o TMPGC-0. Ver solucao melhor.
-		if (sigla != null && !sigla.equals("TMPGC-0"))
-			informacao = GcInformacao.findBySigla(sigla);
+		if (sigla != null && !sigla.equals("TMPGC-0")) {
+			//Evita erro de edição de conhecimentos em várias abas do navegador, 
+			//garantindo que seja editado o conhecimento passado na URL.
+			String uri = getRequest().getRequestURI();		
+			String siglaConhecimentoAEditar = uri.substring(uri.lastIndexOf("/")+1);
+			
+			if(siglaConhecimentoAEditar != sigla) {
+				informacao = GcInformacao.findBySigla(siglaConhecimentoAEditar);
+			} 
+			else
+				informacao = GcInformacao.findBySigla(sigla);
+		}
 		else
 			informacao = new GcInformacao();
-
+		
 		if (informacao.getAutor() == null
 				|| informacao.podeRevisar(titular, lotaTitular) != null
 				|| informacao.acessoPermitido(titular, lotaTitular,
@@ -827,7 +837,7 @@ public class AppController extends GcController {
 		int a = 0;
 	}
 	
-	@Path("/public/app/exibir/{sigla}")
+	@Path({"/public/app/exibir/{sigla}","/public/app/exibir"})
 	public void exibirPublicoExterno(String sigla) throws Exception {
 		
 		GcInformacao informacao = GcInformacao.findBySigla(sigla);
@@ -841,7 +851,9 @@ public class AppController extends GcController {
 			;
 		
 		String conteudo = bl.marcarLinkNoConteudo(informacao, informacao.getArq()
-				.getConteudoTXT().replace("/sigagc/app/baixar?id=", "/sigagc/public/app/baixar/"+informacao.getId()+"/").replace("/sigagc/app/exibir", "/sigagc/public/app/exibir"));
+				.getConteudoTXT().replace("/sigagc/app/baixar?id=", "/sigagc/public/app/baixar/"+informacao.getId()+"/"));
+		
+		conteudo = conteudo.replace("/sigagc/app/exibir", "/sigagc/public/app/exibir");
 		
 		em().detach(informacao);
 		// if (conteudo != null)
