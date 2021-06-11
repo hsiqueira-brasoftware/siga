@@ -15,8 +15,8 @@ jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     environment: 
-      name: dev
-      url: 'github.com.br'
+      name: Dev
+      url: 'https://github.com/'
     needs: build
     steps:
       - uses: actions/checkout@v2
@@ -26,8 +26,8 @@ jobs:
   deploy-hmg:
     runs-on: ubuntu-latest
     environment: 
-      name: dev
-      url: 'github.com.br'
+      name: Hmg
+      url: 'Google.com'
     needs: deploy-dev
     steps:
       - uses: actions/checkout@v2
